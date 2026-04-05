@@ -1,0 +1,276 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Base ───────────────────────────────────────────────────── */
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  html {
+    transition:
+      color 0.15s,
+      background-color 0.15s;
+  }
+  body {
+    font-family: "DM Sans", sans-serif;
+    background: #ffffff;
+    color: #1a1d23;
+    -webkit-font-smoothing: antialiased;
+    color-scheme: light;
+  }
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #c7d7fe;
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #818cf8;
+  }
+}
+
+/* ── Shared components (light) ──────────────────────────────── */
+@layer components {
+  .sidebar-link {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
+           text-gray-500 hover:text-gray-900 hover:bg-gray-100
+           transition-all duration-150 cursor-pointer select-none;
+  }
+  .sidebar-link.active {
+    @apply bg-brand-50 text-brand-700 hover:bg-brand-50 hover:text-brand-700;
+  }
+  .card {
+    @apply bg-white rounded-2xl border border-gray-200 shadow-sm;
+  }
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-brand-600 text-white
+           rounded-xl text-sm font-medium hover:bg-brand-700
+           transition-colors duration-150 cursor-pointer;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 px-3 py-1.5 text-gray-500
+           rounded-lg text-sm font-medium hover:bg-gray-100 hover:text-gray-800
+           transition-colors duration-150 cursor-pointer border border-transparent
+           hover:border-gray-200;
+  }
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-easy {
+    @apply bg-emerald-50 text-emerald-700;
+  }
+  .badge-medium {
+    @apply bg-amber-50 text-amber-700;
+  }
+  .badge-hard {
+    @apply bg-red-50 text-red-700;
+  }
+  .badge-done {
+    @apply bg-brand-50 text-brand-700;
+  }
+  .badge-todo {
+    @apply bg-gray-100 text-gray-600;
+  }
+  .badge-progress {
+    @apply bg-amber-50 text-amber-700;
+  }
+  .input {
+    @apply w-full px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-900
+           focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent
+           bg-white placeholder-gray-400 transition-all;
+  }
+  .progress-track {
+    @apply w-full bg-gray-100 rounded-full overflow-hidden;
+  }
+  .progress-fill {
+    @apply h-full rounded-full transition-all duration-700 ease-out;
+  }
+  .section-title {
+    @apply text-lg font-semibold text-gray-800 tracking-tight;
+  }
+  .label {
+    @apply text-xs font-medium text-gray-500 uppercase tracking-wider;
+  }
+}
+
+/* ── Dark mode overrides (explicit html.dark selectors) ──────── */
+/* These always work regardless of Tailwind @apply dark: behavior */
+
+html.dark body {
+  background: #0f172a;
+  color: #f1f5f9;
+  color-scheme: dark;
+}
+html.dark ::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+html.dark ::-webkit-scrollbar-thumb {
+  background: #4338ca;
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #6366f1;
+}
+
+html.dark .card {
+  background-color: #1e293b; /* slate-800 */
+  border-color: #334155; /* slate-700 */
+}
+html.dark .input {
+  background-color: #334155; /* slate-700 */
+  border-color: #475569; /* slate-600 */
+  color: #f1f5f9; /* slate-100 */
+}
+html.dark .input::placeholder {
+  color: #64748b;
+} /* slate-500 */
+html.dark .input:focus {
+  --tw-ring-color: #6366f1;
+}
+
+html.dark .sidebar-link {
+  color: #94a3b8; /* slate-400 */
+}
+html.dark .sidebar-link:hover {
+  color: #f1f5f9;
+  background-color: rgba(100, 116, 139, 0.25);
+}
+html.dark .sidebar-link.active {
+  background-color: rgba(67, 56, 202, 0.2);
+  color: #818cf8; /* brand-400 */
+}
+html.dark .sidebar-link.active:hover {
+  background-color: rgba(67, 56, 202, 0.2);
+  color: #818cf8;
+}
+
+html.dark .btn-ghost {
+  color: #94a3b8;
+}
+html.dark .btn-ghost:hover {
+  background-color: #334155;
+  color: #e2e8f0;
+  border-color: #475569;
+}
+
+html.dark .badge-easy {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+}
+html.dark .badge-medium {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+}
+html.dark .badge-hard {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+html.dark .badge-done {
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+}
+html.dark .badge-todo {
+  background: #334155;
+  color: #94a3b8;
+}
+html.dark .badge-progress {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+}
+
+html.dark .progress-track {
+  background-color: #334155;
+}
+
+html.dark .section-title {
+  color: #f1f5f9;
+}
+html.dark .label {
+  color: #64748b;
+}
+
+/* Shimmer */
+html.dark .shimmer {
+  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+  background-size: 200% 100%;
+}
+
+/* Checkbox */
+html.dark .custom-check {
+  background: #1e293b;
+  border-color: #4338ca;
+}
+
+/* ── Animations ──────────────────────────────────────────────── */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+.shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.fade-in {
+  animation: fadeIn 0.3s ease forwards;
+}
+
+.sidebar-enter {
+  transform: translateX(-100%);
+}
+.sidebar-enter-active {
+  transform: translateX(0);
+  transition: transform 300ms ease;
+}
+
+.custom-check {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #c7d7fe;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+  background: white;
+  flex-shrink: 0;
+}
+.custom-check:checked {
+  background: #6366f1;
+  border-color: #6366f1;
+}
+.custom-check:checked::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 6px;
+  height: 10px;
+  border: 2px solid white;
+  border-left: none;
+  border-top: none;
+  transform: rotate(45deg);
+}
+.custom-check:hover:not(:checked) {
+  border-color: #818cf8;
+}
