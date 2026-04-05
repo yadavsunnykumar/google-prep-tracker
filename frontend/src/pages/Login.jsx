@@ -53,11 +53,13 @@ export default function Login() {
     google: false,
   });
 
+  const apiBase = import.meta.env.VITE_API_URL || "/api";
+
   useEffect(() => {
     const oauthError = searchParams.get("oauthError");
     if (oauthError) setError(decodeURIComponent(oauthError));
 
-    fetch("/api/oauth/status")
+    fetch(`${apiBase}/oauth/status`)
       .then((r) => r.json())
       .then(setOauthStatus)
       .catch(() => {});
@@ -134,7 +136,7 @@ export default function Login() {
             <div className="space-y-2.5 mb-5">
               {oauthStatus.github && (
                 <a
-                  href="/api/oauth/github"
+                  href={`${apiBase}/oauth/github`}
                   className="flex items-center justify-center gap-2.5 w-full py-2.5 px-4 rounded-xl bg-gray-900 dark:bg-gray-700 text-white text-sm font-medium hover:bg-gray-800 dark:hover:bg-gray-600 transition-colors border border-gray-800 dark:border-gray-600"
                   aria-label="Continue with GitHub"
                 >
@@ -144,7 +146,7 @@ export default function Login() {
               )}
               {oauthStatus.google && (
                 <a
-                  href="/api/oauth/google"
+                  href={`${apiBase}/oauth/google`}
                   className="flex items-center justify-center gap-2.5 w-full py-2.5 px-4 rounded-xl bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-600 shadow-sm"
                   aria-label="Continue with Google"
                 >
