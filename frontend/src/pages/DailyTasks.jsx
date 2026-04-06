@@ -94,11 +94,11 @@ export default function DailyTasks() {
 
       {/* Day calendar grid */}
       <div className="card p-5">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
             Select a Day
           </h3>
-          <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
             <span className="flex items-center gap-1">
               <span className="w-3 h-3 rounded-sm bg-emerald-400 inline-block"></span>{" "}
               Done
@@ -113,7 +113,7 @@ export default function DailyTasks() {
             </span>
           </div>
         </div>
-        <div className="grid grid-cols-7 sm:grid-cols-11 md:grid-cols-12 lg:grid-cols-14 xl:grid-cols-16 gap-1.5 flex-wrap">
+        <div className="grid grid-cols-5 sm:grid-cols-7 md:grid-cols-10 lg:grid-cols-12 gap-1.5">
           {Array.from({ length: maxDay }, (_, i) => i + 1).map((day) => {
             const t = tasks.find((t) => t.dayNumber === day);
             const isDone = t?.isCompleted;
