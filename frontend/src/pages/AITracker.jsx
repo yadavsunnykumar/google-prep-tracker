@@ -241,7 +241,7 @@ export default function AITracker() {
             className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
           />
           <input
-            className="input pl-8 w-52"
+            className="input pl-8 w-full sm:w-52"
             placeholder="Search topics..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -360,7 +360,7 @@ export default function AITracker() {
                       return (
                         <div key={item._id} className="group">
                           {/* Topic row */}
-                          <div className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                          <div className="flex flex-wrap items-center gap-2 sm:gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
                             {/* Status icon */}
                             <StatusIcon
                               size={16}
