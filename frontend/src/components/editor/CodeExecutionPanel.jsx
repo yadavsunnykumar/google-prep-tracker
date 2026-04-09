@@ -47,7 +47,7 @@ export default function CodeExecutionPanel({ problemId, problemName }) {
       setResult(res);
       setActiveTab("output");
     } catch (err) {
-      setError(err?.error || "Execution failed. Check your Judge0 API key.");
+      setError(err?.error || "Execution failed. Please try again.");
     } finally {
       setRunning(false);
     }

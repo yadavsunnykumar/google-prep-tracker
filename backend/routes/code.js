@@ -6,13 +6,15 @@ const { CodeSubmission } = require("../models");
 const { requireAuth } = require("../middleware/auth");
 const rateLimit = require("express-rate-limit");
 
-// Judge0 language IDs
-const LANGUAGE_MAP = {
-  javascript: 63,
-  python: 71,
-  java: 62,
-  cpp: 54,
+// Piston runtime names (https://emkc.org/api/v2/piston/runtimes)
+const PISTON_LANGUAGES = {
+  javascript: "javascript",
+  python: "python",
+  java: "java",
+  cpp: "c++",
 };
+
+const PISTON_URL = "https://emkc.org/api/v2/piston/execute";
 
 const codeLimiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 minutes
@@ -58,71 +60,52 @@ function fetchJson(url, options = {}) {
   });
 }
 
-// POST /api/code/run  — submit code to Judge0 and return result
+// POST /api/code/run  — submit code to Piston and return result
 router.post("/run", requireAuth, codeLimiter, async (req, res, next) => {
   try {
     const { language, code, stdin = "" } = req.body;
 
-    if (!LANGUAGE_MAP[language]) {
+    if (!PISTON_LANGUAGES[language]) {
       return res.status(400).json({ error: "Unsupported language" });
     }
     if (!code || typeof code !== "string" || code.length > 64000) {
       return res.status(400).json({ error: "Invalid code payload" });
     }
 
-    const JUDGE0_URL =
-      process.env.JUDGE0_API_URL || "https://judge0-ce.p.rapidapi.com";
-    const JUDGE0_KEY = process.env.JUDGE0_API_KEY;
-
-    if (!JUDGE0_KEY) {
-      return res.status(503).json({
-        error:
-          "Code execution service not configured. Add JUDGE0_API_KEY to backend environment.",
-      });
-    }
-
     const payload = JSON.stringify({
-      language_id: LANGUAGE_MAP[language],
-      source_code: Buffer.from(code).toString("base64"),
-      stdin: Buffer.from(stdin).toString("base64"),
-      base64_encoded: true,
-      wait: true,
+      language: PISTON_LANGUAGES[language],
+      version: "*",
+      files: [{ content: code }],
+      stdin,
     });
 
-    const result = await fetchJson(
-      `${JUDGE0_URL}/submissions?base64_encoded=true&wait=true`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-rapidapi-host": "judge0-ce.p.rapidapi.com",
-          "x-rapidapi-key": JUDGE0_KEY,
-        },
-        body: payload,
-      },
-    );
+    const result = await fetchJson(PISTON_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: payload,
+    });
 
-    if (result.status !== 201 && result.status !== 200) {
+    if (result.status !== 200) {
       return res.status(502).json({ error: "Code execution service error" });
     }
 
-    const j = result.data;
-    const decode = (b64) => {
-      if (!b64) return "";
-      try {
-        return Buffer.from(b64, "base64").toString("utf8");
-      } catch {
-        return b64;
-      }
-    };
+    const { run, compile } = result.data;
+
+    // Derive a human-readable status
+    let status = "Accepted";
+    if (compile && compile.code !== 0) {
+      status = "Compilation Error";
+    } else if (run.code !== 0 || run.signal) {
+      status = "Runtime Error";
+    }
 
     res.json({
-      stdout: decode(j.stdout),
-      stderr: decode(j.stderr),
-      compile_output: decode(j.compile_output),
-      status: j.status?.description || "Unknown",
-      time: j.time,
-      memory: j.memory,
+      stdout: run.stdout || "",
+      stderr: run.stderr || "",
+      compile_output: compile ? compile.stderr || compile.stdout || "" : "",
+      status,
+      time: null,
+      memory: null,
     });
   } catch (err) {
     next(err);
@@ -144,7 +127,7 @@ router.post("/save", requireAuth, async (req, res, next) => {
       statusDescription,
     } = req.body;
 
-    if (!LANGUAGE_MAP[language]) {
+    if (!PISTON_LANGUAGES[language]) {
       return res.status(400).json({ error: "Unsupported language" });
     }
     if (!code || code.length > 64000) {
