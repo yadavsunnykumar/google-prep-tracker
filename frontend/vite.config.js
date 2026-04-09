@@ -12,4 +12,23 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    chunkSizeWarningLimit: 800,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-tiptap": [
+            "@tiptap/react",
+            "@tiptap/starter-kit",
+            "@tiptap/extension-underline",
+            "@tiptap/extension-code-block-lowlight",
+            "@tiptap/extension-placeholder",
+            "lowlight",
+          ],
+          "vendor-monaco": ["@monaco-editor/react"],
+          "vendor-react": ["react", "react-dom"],
+        },
+      },
+    },
+  },
 });

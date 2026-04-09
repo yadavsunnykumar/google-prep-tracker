@@ -37,7 +37,7 @@ const userStatusSchema = new mongoose.Schema(
       enum: ["Todo", "In Progress", "Done"],
       default: "Todo",
     },
-    notes: { type: String, default: "" },
+    notes: { type: mongoose.Schema.Types.Mixed, default: "" },
   },
   { timestamps: true },
 );
@@ -181,6 +181,109 @@ const progressSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+// ─── Note (standalone rich-text notes) ───────────────────────
+const noteSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    title: { type: String, required: true, trim: true, maxlength: 200 },
+    category: {
+      type: String,
+      enum: ["dsa", "sd", "ai", "general"],
+      default: "general",
+    },
+    itemId: { type: mongoose.Schema.Types.ObjectId, default: null },
+    content: { type: mongoose.Schema.Types.Mixed, default: null }, // TipTap JSON
+    contentHtml: { type: String, default: "" }, // rendered HTML for search
+    tags: [{ type: String, trim: true, maxlength: 50 }],
+  },
+  { timestamps: true },
+);
+noteSchema.index({ userId: 1, category: 1 });
+
+// ─── Code Submission ──────────────────────────────────────────
+const codeSubmissionSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    problemId: { type: mongoose.Schema.Types.ObjectId, default: null },
+    language: {
+      type: String,
+      enum: ["javascript", "python", "java", "cpp"],
+      required: true,
+    },
+    code: { type: String, required: true, maxlength: 64000 },
+    stdin: { type: String, default: "" },
+    stdout: { type: String, default: "" },
+    stderr: { type: String, default: "" },
+    executionTime: { type: Number, default: null }, // ms
+    memoryUsed: { type: Number, default: null }, // KB
+    statusDescription: { type: String, default: "" },
+  },
+  { timestamps: true },
+);
+codeSubmissionSchema.index({ userId: 1, problemId: 1 });
+
+// ─── Skill ────────────────────────────────────────────────────
+const skillSchema = new mongoose.Schema(
+  {
+    skillName: { type: String, required: true, trim: true },
+    category: {
+      type: String,
+      required: true,
+      enum: [
+        "Data Structures & Algorithms",
+        "System Design",
+        "Behavioral & Leadership",
+        "Languages & Frameworks",
+        "Machine Learning & AI",
+        "Core CS Fundamentals",
+      ],
+    },
+    description: { type: String, default: "" },
+    importanceLevel: {
+      type: String,
+      enum: ["High", "Medium", "Low"],
+      default: "Medium",
+    },
+    expectedLevel: { type: String, default: "" },
+    resources: [{ title: String, url: String }],
+    orderIndex: { type: Number, default: 0 },
+  },
+  { timestamps: true },
+);
+
+// ─── Skill Progress (per-user) ────────────────────────────────
+const skillProgressSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    skillId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Skill",
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: ["Not Started", "In Progress", "Completed"],
+      default: "Not Started",
+    },
+    notes: { type: String, default: "", maxlength: 1000 },
+    completedAt: { type: Date, default: null },
+  },
+  { timestamps: true },
+);
+skillProgressSchema.index({ userId: 1, skillId: 1 }, { unique: true });
+
 module.exports = {
   User: mongoose.model("User", userSchema),
   UserStatus: mongoose.model("UserStatus", userStatusSchema),
@@ -190,4 +293,8 @@ module.exports = {
   DailyTask: mongoose.model("DailyTask", dailyTaskSchema),
   MonthlyPlan: mongoose.model("MonthlyPlan", monthlyPlanSchema),
   Progress: mongoose.model("Progress", progressSchema),
+  Note: mongoose.model("Note", noteSchema),
+  CodeSubmission: mongoose.model("CodeSubmission", codeSubmissionSchema),
+  Skill: mongoose.model("Skill", skillSchema),
+  SkillProgress: mongoose.model("SkillProgress", skillProgressSchema),
 };

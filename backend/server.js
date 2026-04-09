@@ -29,7 +29,7 @@ app.use(helmet());
 const allowedOrigin = process.env.FRONTEND_URL || "http://localhost:5173";
 app.use(cors({ origin: allowedOrigin, credentials: true }));
 
-app.use(express.json({ limit: "10kb" })); // guard against oversized payloads
+app.use(express.json({ limit: "1mb" })); // increased for rich text / code payloads
 app.use(morgan("dev"));
 
 // ── Session ───────────────────────────────────────────────────
@@ -70,6 +70,9 @@ app.use("/api/ai-topics", require("./routes/aiTopics"));
 app.use("/api/monthly-plan", require("./routes/monthlyPlan"));
 app.use("/api/daily-tasks", require("./routes/dailyTasks"));
 app.use("/api/dashboard", require("./routes/dashboard"));
+app.use("/api/notes", require("./routes/notes"));
+app.use("/api/code", require("./routes/code"));
+app.use("/api/skills", require("./routes/skills"));
 
 app.get("/api/health", (_req, res) =>
   res.json({ status: "ok", timestamp: new Date() }),

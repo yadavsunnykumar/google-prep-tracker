@@ -72,4 +72,26 @@ export const progressApi = {
   update: (data) => api.patch("/progress", data),
 };
 
+export const notesApi = {
+  getAll: (params) => api.get("/notes", { params }),
+  get: (id) => api.get(`/notes/${id}`),
+  create: (data) => api.post("/notes", data),
+  update: (id, data) => api.put(`/notes/${id}`, data),
+  delete: (id) => api.delete(`/notes/${id}`),
+};
+
+export const codeApi = {
+  run: (data) => api.post("/code/run", data),
+  save: (data) => api.post("/code/save", data),
+  getSubmissions: (params) => api.get("/code/submissions", { params }),
+};
+
+export const skillsApi = {
+  getAll: () => api.get("/skills"),
+  getSummary: () => api.get("/skills/summary"),
+  updateProgress: (skillId, status) =>
+    api.patch(`/skills/${skillId}/progress`, { status }),
+  seed: () => api.post("/skills/seed"),
+};
+
 export default api;
