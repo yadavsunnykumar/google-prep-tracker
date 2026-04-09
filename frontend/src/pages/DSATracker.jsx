@@ -2,6 +2,8 @@ import React, { useEffect, useState, useMemo } from "react";
 import { dsaApi } from "../utils/api";
 import { useAuth } from "../contexts/AuthContext";
 import { Badge, Spinner, SectionHeader, EmptyState } from "../components/ui";
+import RichTextEditor from "../components/editor/RichTextEditor";
+import CodeExecutionPanel from "../components/editor/CodeExecutionPanel";
 import {
   Code2,
   ExternalLink,
@@ -77,8 +79,9 @@ export default function DSATracker() {
   const [filterStatus, setFilterStatus] = useState("All");
   const [collapsed, setCollapsed] = useState({});
   const [expandedIds, setExpandedIds] = useState(new Set());
+  const [expandedTab, setExpandedTab] = useState({}); // { [problemId]: "notes" | "code" }
   const [noteEditing, setNoteEditing] = useState(null);
-  const [noteVal, setNoteVal] = useState("");
+  const [noteVal, setNoteVal] = useState(null);
   const [showAdd, setShowAdd] = useState(false);
   const [newP, setNewP] = useState({
     name: "",
@@ -176,6 +179,7 @@ export default function DSATracker() {
       const updated = await dsaApi.updateNotes(id, noteVal);
       setProblems((prev) => prev.map((x) => (x._id === id ? updated : x)));
       setNoteEditing(null);
+      setNoteVal(null);
     } catch (err) {
       console.error(err);
     }
@@ -523,49 +527,115 @@ export default function DSATracker() {
                               {isExpanded && (
                                 <tr>
                                   <td colSpan={5} className="px-4 pb-4 pt-1">
-                                    <div className="rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 p-4">
-                                      <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">
-                                        My Notes
-                                      </p>
-                                      {isEditingNote ? (
-                                        <div>
-                                          <textarea
-                                            className="input resize-none h-28 text-xs mb-2 w-full"
-                                            value={noteVal}
-                                            onChange={(e) =>
-                                              setNoteVal(e.target.value)
+                                    <div className="rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 overflow-hidden">
+                                      {/* Tabs */}
+                                      <div className="flex border-b border-gray-100 dark:border-gray-700">
+                                        {["notes", "code"].map((tab) => (
+                                          <button
+                                            key={tab}
+                                            onClick={() =>
+                                              setExpandedTab((prev) => ({
+                                                ...prev,
+                                                [p._id]: tab,
+                                              }))
                                             }
-                                            placeholder="Write your notes, approach, time complexity..."
-                                            autoFocus
+                                            className={`px-4 py-2 text-xs font-medium capitalize transition-colors ${
+                                              (expandedTab[p._id] ||
+                                                "notes") === tab
+                                                ? "text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-500 -mb-px bg-white dark:bg-gray-800"
+                                                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                                            }`}
+                                          >
+                                            {tab === "notes"
+                                              ? "📝 Notes"
+                                              : "💻 Code"}
+                                          </button>
+                                        ))}
+                                      </div>
+
+                                      <div className="p-4">
+                                        {(expandedTab[p._id] || "notes") ===
+                                        "notes" ? (
+                                          <>
+                                            <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">
+                                              My Notes
+                                            </p>
+                                            {isEditingNote ? (
+                                              <div>
+                                                <RichTextEditor
+                                                  key={noteEditing}
+                                                  content={
+                                                    noteVal &&
+                                                    typeof noteVal ===
+                                                      "object" &&
+                                                    noteVal.json
+                                                      ? noteVal.json
+                                                      : typeof noteVal ===
+                                                          "string"
+                                                        ? noteVal
+                                                        : null
+                                                  }
+                                                  onChange={(json, html) =>
+                                                    setNoteVal({ json, html })
+                                                  }
+                                                  placeholder="Write your notes, approach, time complexity..."
+                                                  minHeight="120px"
+                                                />
+                                                <div className="flex gap-2 mt-2">
+                                                  <button
+                                                    onClick={() =>
+                                                      saveNote(p._id)
+                                                    }
+                                                    className="btn-primary text-xs py-1.5"
+                                                  >
+                                                    Save
+                                                  </button>
+                                                  <button
+                                                    onClick={() =>
+                                                      setNoteEditing(null)
+                                                    }
+                                                    className="btn-ghost text-xs py-1.5"
+                                                  >
+                                                    Cancel
+                                                  </button>
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              <div
+                                                onClick={() => {
+                                                  setNoteEditing(p._id);
+                                                  setNoteVal(p.notes || null);
+                                                }}
+                                                className="min-h-[80px] text-xs text-gray-600 dark:text-gray-300 cursor-pointer p-3 rounded-lg hover:bg-white dark:hover:bg-gray-700/50 border border-dashed border-gray-200 dark:border-gray-600 transition-colors leading-relaxed"
+                                              >
+                                                {!p.notes ? (
+                                                  <span className="italic text-gray-400">
+                                                    Click to add notes...
+                                                  </span>
+                                                ) : typeof p.notes ===
+                                                  "string" ? (
+                                                  p.notes
+                                                ) : p.notes?.html ? (
+                                                  <div
+                                                    dangerouslySetInnerHTML={{
+                                                      __html: p.notes.html,
+                                                    }}
+                                                  />
+                                                ) : (
+                                                  <span className="italic text-gray-400">
+                                                    Click to edit notes...
+                                                  </span>
+                                                )}
+                                              </div>
+                                            )}
+                                          </>
+                                        ) : (
+                                          <CodeExecutionPanel
+                                            problemId={p._id}
+                                            problemName={p.name}
                                           />
-                                          <div className="flex gap-2">
-                                            <button
-                                              onClick={() => saveNote(p._id)}
-                                              className="btn-primary text-xs py-1.5"
-                                            >
-                                              Save
-                                            </button>
-                                            <button
-                                              onClick={() =>
-                                                setNoteEditing(null)
-                                              }
-                                              className="btn-ghost text-xs py-1.5"
-                                            >
-                                              Cancel
-                                            </button>
-                                          </div>
-                                        </div>
-                                      ) : (
-                                        <div
-                                          onClick={() => {
-                                            setNoteEditing(p._id);
-                                            setNoteVal(p.notes || "");
-                                          }}
-                                          className="min-h-[80px] text-xs text-gray-500 dark:text-gray-400 italic cursor-pointer p-3 rounded-lg hover:bg-white dark:hover:bg-gray-700/50 border border-dashed border-gray-200 dark:border-gray-600 transition-colors leading-relaxed"
-                                        >
-                                          {p.notes || "Click to add notes..."}
-                                        </div>
-                                      )}
+                                        )}
+                                      </div>
                                     </div>
                                   </td>
                                 </tr>

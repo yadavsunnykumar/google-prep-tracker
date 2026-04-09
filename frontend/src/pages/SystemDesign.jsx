@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { systemDesignApi } from "../utils/api";
 import { Spinner, SectionHeader, EmptyState } from "../components/ui";
+import RichTextEditor from "../components/editor/RichTextEditor";
 import {
   Server,
   CheckCircle2,
@@ -66,7 +67,7 @@ export default function SystemDesign() {
   const [expandedIds, setExpandedIds] = useState(new Set());
   const [collapsedGroups, setCollapsedGroups] = useState(new Set());
   const [noteEditing, setNoteEditing] = useState(null);
-  const [noteVal, setNoteVal] = useState("");
+  const [noteVal, setNoteVal] = useState(null);
 
   const toggleExpand = (id) =>
     setExpandedIds((prev) => {
@@ -377,16 +378,24 @@ export default function SystemDesign() {
                                   </p>
                                   {isEditingNote ? (
                                     <div>
-                                      <textarea
-                                        className="input resize-none h-28 text-xs mb-2 w-full"
-                                        value={noteVal}
-                                        onChange={(e) =>
-                                          setNoteVal(e.target.value)
+                                      <RichTextEditor
+                                        key={noteEditing}
+                                        content={
+                                          noteVal &&
+                                          typeof noteVal === "object" &&
+                                          noteVal.json
+                                            ? noteVal.json
+                                            : typeof noteVal === "string"
+                                              ? noteVal
+                                              : null
+                                        }
+                                        onChange={(json, html) =>
+                                          setNoteVal({ json, html })
                                         }
                                         placeholder="Write your notes, key insights, diagrams to remember..."
-                                        autoFocus
+                                        minHeight="120px"
                                       />
-                                      <div className="flex gap-2">
+                                      <div className="flex gap-2 mt-2">
                                         <button
                                           onClick={() => saveNote(item._id)}
                                           className="btn-primary text-xs py-1.5"
@@ -405,11 +414,27 @@ export default function SystemDesign() {
                                     <div
                                       onClick={() => {
                                         setNoteEditing(item._id);
-                                        setNoteVal(item.notes || "");
+                                        setNoteVal(item.notes || null);
                                       }}
-                                      className="min-h-[80px] text-xs text-slate-500 dark:text-slate-400 italic cursor-pointer p-3 rounded-lg hover:bg-white dark:hover:bg-slate-700/50 border border-dashed border-slate-200 dark:border-slate-600 transition-colors leading-relaxed"
+                                      className="min-h-[80px] text-xs text-slate-600 dark:text-slate-300 cursor-pointer p-3 rounded-lg hover:bg-white dark:hover:bg-slate-700/50 border border-dashed border-slate-200 dark:border-slate-600 transition-colors leading-relaxed"
                                     >
-                                      {item.notes || "Click to add notes..."}
+                                      {!item.notes ? (
+                                        <span className="italic text-slate-400">
+                                          Click to add notes...
+                                        </span>
+                                      ) : typeof item.notes === "string" ? (
+                                        item.notes
+                                      ) : item.notes?.html ? (
+                                        <div
+                                          dangerouslySetInnerHTML={{
+                                            __html: item.notes.html,
+                                          }}
+                                        />
+                                      ) : (
+                                        <span className="italic text-slate-400">
+                                          Click to edit notes...
+                                        </span>
+                                      )}
                                     </div>
                                   )}
                                 </div>

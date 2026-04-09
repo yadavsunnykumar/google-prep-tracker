@@ -22,6 +22,8 @@ import {
   Pencil,
   Check,
   Loader2,
+  FileText,
+  Award,
 } from "lucide-react";
 import { useTheme } from "../../contexts/ThemeContext";
 
@@ -32,6 +34,8 @@ const NAV = [
   { to: "/dsa", icon: Code2, label: "DSA Tracker" },
   { to: "/system-design", icon: Server, label: "System Design" },
   { to: "/ai-ml", icon: Brain, label: "AI / ML" },
+  { to: "/notes", icon: FileText, label: "Notes" },
+  { to: "/skills", icon: Award, label: "SDE-2 Skills" },
 ];
 
 export default function Layout({ user, onLogout, onUpdateUser }) {
