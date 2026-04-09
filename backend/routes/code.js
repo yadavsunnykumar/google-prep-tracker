@@ -6,12 +6,12 @@ const { CodeSubmission } = require("../models");
 const { requireAuth } = require("../middleware/auth");
 const rateLimit = require("express-rate-limit");
 
-// Piston runtime names (https://emkc.org/api/v2/piston/runtimes)
+// Piston runtime names + pinned versions (https://emkc.org/api/v2/piston/runtimes)
 const PISTON_LANGUAGES = {
-  javascript: "javascript",
-  python: "python",
-  java: "java",
-  cpp: "c++",
+  javascript: { language: "javascript", version: "18.15.0" },
+  python:     { language: "python",     version: "3.10.0"  },
+  java:       { language: "java",       version: "15.0.2"  },
+  cpp:        { language: "c++",        version: "10.2.0"  },
 };
 
 const PISTON_URL = "https://emkc.org/api/v2/piston/execute";
@@ -72,16 +72,20 @@ router.post("/run", requireAuth, codeLimiter, async (req, res, next) => {
       return res.status(400).json({ error: "Invalid code payload" });
     }
 
+    const { language: pistonLang, version: pistonVersion } = PISTON_LANGUAGES[language];
     const payload = JSON.stringify({
-      language: PISTON_LANGUAGES[language],
-      version: "*",
+      language: pistonLang,
+      version: pistonVersion,
       files: [{ content: code }],
       stdin,
     });
 
     const result = await fetchJson(PISTON_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(payload),
+      },
       body: payload,
     });
 
