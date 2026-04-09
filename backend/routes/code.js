@@ -6,15 +6,37 @@ const { CodeSubmission } = require("../models");
 const { requireAuth } = require("../middleware/auth");
 const rateLimit = require("express-rate-limit");
 
-// Piston runtime names + pinned versions (https://emkc.org/api/v2/piston/runtimes)
-const PISTON_LANGUAGES = {
-  javascript: { language: "javascript", version: "18.15.0" },
-  python:     { language: "python",     version: "3.10.0"  },
-  java:       { language: "java",       version: "15.0.2"  },
-  cpp:        { language: "c++",        version: "10.2.0"  },
+// Wandbox compiler pattern matchers (our language key → regex to find best compiler)
+const WANDBOX_PATTERNS = {
+  javascript: { re: /^nodejs-\d/, options: "" },
+  python: { re: /^cpython-\d/, options: "" },
+  java: { re: /^openjdk-\d/, options: "" },
+  cpp: { re: /^gcc-\d/, options: "-std=c++17" },
 };
 
-const PISTON_URL = "https://emkc.org/api/v2/piston/execute";
+const WANDBOX_BASE = "https://wandbox.org/api";
+
+// Compiler cache — populated lazily on first /run request
+let wandboxCompilerCache = null;
+
+async function getWandboxCompiler(language) {
+  if (!wandboxCompilerCache) {
+    const result = await fetchJson(`${WANDBOX_BASE}/list.json`, {
+      method: "GET",
+      headers: {},
+    });
+    if (result.status !== 200 || !Array.isArray(result.data)) {
+      throw new Error("Could not fetch Wandbox compiler list");
+    }
+    wandboxCompilerCache = result.data;
+  }
+  const { re } = WANDBOX_PATTERNS[language];
+  const matches = wandboxCompilerCache
+    .map((c) => c.name)
+    .filter((name) => re.test(name) && !name.includes("head"))
+    .sort();
+  return matches[matches.length - 1] || null; // latest stable version
+}
 
 const codeLimiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 minutes
@@ -60,27 +82,33 @@ function fetchJson(url, options = {}) {
   });
 }
 
-// POST /api/code/run  — submit code to Piston and return result
+// POST /api/code/run  — submit code to Wandbox and return result
 router.post("/run", requireAuth, codeLimiter, async (req, res, next) => {
   try {
     const { language, code, stdin = "" } = req.body;
 
-    if (!PISTON_LANGUAGES[language]) {
+    if (!WANDBOX_PATTERNS[language]) {
       return res.status(400).json({ error: "Unsupported language" });
     }
     if (!code || typeof code !== "string" || code.length > 64000) {
       return res.status(400).json({ error: "Invalid code payload" });
     }
 
-    const { language: pistonLang, version: pistonVersion } = PISTON_LANGUAGES[language];
+    const compiler = await getWandboxCompiler(language);
+    if (!compiler) {
+      return res
+        .status(503)
+        .json({ error: `No compiler available for ${language}` });
+    }
+
     const payload = JSON.stringify({
-      language: pistonLang,
-      version: pistonVersion,
-      files: [{ content: code }],
+      compiler,
+      code,
       stdin,
+      "compiler-option-raw": WANDBOX_PATTERNS[language].options,
     });
 
-    const result = await fetchJson(PISTON_URL, {
+    const result = await fetchJson(`${WANDBOX_BASE}/compile.json`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -90,23 +118,27 @@ router.post("/run", requireAuth, codeLimiter, async (req, res, next) => {
     });
 
     if (result.status !== 200) {
-      return res.status(502).json({ error: "Code execution service error" });
+      const detail =
+        typeof result.data === "object"
+          ? result.data?.error || JSON.stringify(result.data)
+          : result.data;
+      return res
+        .status(502)
+        .json({ error: `Code execution failed: ${detail}` });
     }
 
-    const { run, compile } = result.data;
+    const d = result.data;
+    const compileError = d.compiler_error || d.compiler_output || "";
+    const exitCode = parseInt(d.status ?? "0", 10);
 
-    // Derive a human-readable status
     let status = "Accepted";
-    if (compile && compile.code !== 0) {
-      status = "Compilation Error";
-    } else if (run.code !== 0 || run.signal) {
-      status = "Runtime Error";
-    }
+    if (compileError) status = "Compilation Error";
+    else if (exitCode !== 0) status = "Runtime Error";
 
     res.json({
-      stdout: run.stdout || "",
-      stderr: run.stderr || "",
-      compile_output: compile ? compile.stderr || compile.stdout || "" : "",
+      stdout: d.program_output || "",
+      stderr: d.program_error || "",
+      compile_output: compileError,
       status,
       time: null,
       memory: null,
@@ -131,7 +163,7 @@ router.post("/save", requireAuth, async (req, res, next) => {
       statusDescription,
     } = req.body;
 
-    if (!PISTON_LANGUAGES[language]) {
+    if (!WANDBOX_PATTERNS[language]) {
       return res.status(400).json({ error: "Unsupported language" });
     }
     if (!code || code.length > 64000) {
