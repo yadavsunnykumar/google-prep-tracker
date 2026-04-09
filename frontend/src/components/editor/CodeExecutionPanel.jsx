@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import CodeEditor, { DEFAULT_SNIPPETS } from "./CodeEditor";
 import { codeApi } from "../../utils/api";
 import {
@@ -20,14 +20,40 @@ const STATUS_COLOR = {
 };
 
 export default function CodeExecutionPanel({ problemId, problemName }) {
-  const [language, setLanguage] = useState("python");
-  const [code, setCode] = useState(DEFAULT_SNIPPETS.python);
+  const [language, setLanguage] = useState(() => {
+    if (!problemId) return "python";
+    try {
+      const saved = JSON.parse(localStorage.getItem(`codepad_${problemId}`));
+      if (saved?.lang && DEFAULT_SNIPPETS[saved.lang] !== undefined)
+        return saved.lang;
+    } catch {}
+    return "python";
+  });
+  const [code, setCode] = useState(() => {
+    if (!problemId) return DEFAULT_SNIPPETS.python;
+    try {
+      const saved = JSON.parse(localStorage.getItem(`codepad_${problemId}`));
+      if (saved?.src !== undefined) return saved.src;
+      if (saved?.lang)
+        return DEFAULT_SNIPPETS[saved.lang] || DEFAULT_SNIPPETS.python;
+    } catch {}
+    return DEFAULT_SNIPPETS.python;
+  });
   const [stdin, setStdin] = useState("");
   const [result, setResult] = useState(null);
   const [running, setRunning] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("output"); // output | input
+
+  // Persist code + language to localStorage on every change
+  useEffect(() => {
+    if (!problemId) return;
+    localStorage.setItem(
+      `codepad_${problemId}`,
+      JSON.stringify({ lang: language, src: code }),
+    );
+  }, [problemId, language, code]);
 
   const handleLanguageChange = useCallback((lang) => {
     setLanguage(lang);

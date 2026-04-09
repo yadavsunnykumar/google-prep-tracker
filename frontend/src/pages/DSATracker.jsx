@@ -178,6 +178,7 @@ export default function DSATracker() {
     try {
       const updated = await dsaApi.updateNotes(id, noteVal);
       setProblems((prev) => prev.map((x) => (x._id === id ? updated : x)));
+      localStorage.removeItem(`note_draft_${id}`);
       setNoteEditing(null);
       setNoteVal(null);
     } catch (err) {
@@ -575,9 +576,18 @@ export default function DSATracker() {
                                                         ? noteVal
                                                         : null
                                                   }
-                                                  onChange={(json, html) =>
-                                                    setNoteVal({ json, html })
-                                                  }
+                                                  onChange={(json, html) => {
+                                                    setNoteVal({ json, html });
+                                                    try {
+                                                      localStorage.setItem(
+                                                        `note_draft_${p._id}`,
+                                                        JSON.stringify({
+                                                          json,
+                                                          html,
+                                                        }),
+                                                      );
+                                                    } catch {}
+                                                  }}
                                                   placeholder="Write your notes, approach, time complexity..."
                                                   minHeight="120px"
                                                 />
@@ -604,7 +614,18 @@ export default function DSATracker() {
                                               <div
                                                 onClick={() => {
                                                   setNoteEditing(p._id);
-                                                  setNoteVal(p.notes || null);
+                                                  try {
+                                                    const draft = JSON.parse(
+                                                      localStorage.getItem(
+                                                        `note_draft_${p._id}`,
+                                                      ),
+                                                    );
+                                                    setNoteVal(
+                                                      draft || p.notes || null,
+                                                    );
+                                                  } catch {
+                                                    setNoteVal(p.notes || null);
+                                                  }
                                                 }}
                                                 className="min-h-[80px] text-xs text-gray-600 dark:text-gray-300 cursor-pointer p-3 rounded-lg hover:bg-white dark:hover:bg-gray-700/50 border border-dashed border-gray-200 dark:border-gray-600 transition-colors leading-relaxed"
                                               >
