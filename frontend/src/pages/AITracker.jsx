@@ -19,7 +19,7 @@ import {
   X,
 } from "lucide-react";
 
-const CATEGORIES = ["ML", "Deep Learning", "LLM", "GenAI", "MLOps", "React", "DevOps", "Cloud"];
+const CATEGORIES = ["ML", "Deep Learning", "LLM", "GenAI", "MLOps"];
 
 const CAT_COLORS = {
   ML: {
@@ -61,30 +61,6 @@ const CAT_COLORS = {
     dot: "bg-amber-400",
     badge:
       "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800",
-  },
-  React: {
-    bg: "bg-cyan-50 dark:bg-cyan-900/25",
-    text: "text-cyan-700 dark:text-cyan-400",
-    border: "border-cyan-200 dark:border-cyan-800",
-    dot: "bg-cyan-400",
-    badge:
-      "bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-400 border-cyan-200 dark:border-cyan-800",
-  },
-  DevOps: {
-    bg: "bg-orange-50 dark:bg-orange-900/25",
-    text: "text-orange-700 dark:text-orange-400",
-    border: "border-orange-200 dark:border-orange-800",
-    dot: "bg-orange-400",
-    badge:
-      "bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800",
-  },
-  Cloud: {
-    bg: "bg-sky-50 dark:bg-sky-900/25",
-    text: "text-sky-700 dark:text-sky-400",
-    border: "border-sky-200 dark:border-sky-800",
-    dot: "bg-sky-400",
-    badge:
-      "bg-sky-50 dark:bg-sky-900/20 text-sky-700 dark:text-sky-400 border-sky-200 dark:border-sky-800",
   },
 };
 

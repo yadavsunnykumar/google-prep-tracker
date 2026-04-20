@@ -86,6 +86,12 @@ export const codeApi = {
   getSubmissions: (params) => api.get("/code/submissions", { params }),
 };
 
+export const topicsApi = {
+  getAll: (tracker) => api.get("/topics", { params: { tracker } }),
+  updateStatus: (id, status) => api.patch(`/topics/${id}/status`, { status }),
+  updateNotes: (id, notes) => api.patch(`/topics/${id}/notes`, { notes }),
+};
+
 export const skillsApi = {
   getAll: () => api.get("/skills"),
   getSummary: () => api.get("/skills/summary"),

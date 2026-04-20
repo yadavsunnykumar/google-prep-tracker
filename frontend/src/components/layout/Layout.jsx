@@ -24,6 +24,8 @@ import {
   Loader2,
   FileText,
   Award,
+  Cloud,
+  Box,
 } from "lucide-react";
 import { useTheme } from "../../contexts/ThemeContext";
 
@@ -34,6 +36,9 @@ const NAV = [
   { to: "/dsa", icon: Code2, label: "DSA Tracker" },
   { to: "/system-design", icon: Server, label: "System Design" },
   { to: "/ai-ml", icon: Brain, label: "AI / ML" },
+  { to: "/react", icon: Code2, label: "React" },
+  { to: "/devops", icon: Box, label: "DevOps" },
+  { to: "/cloud", icon: Cloud, label: "Cloud" },
   { to: "/notes", icon: FileText, label: "Notes" },
   { to: "/skills", icon: Award, label: "SDE-2 Skills" },
 ];

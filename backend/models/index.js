@@ -31,7 +31,7 @@ const userStatusSchema = new mongoose.Schema(
       required: true,
     },
     itemId: { type: mongoose.Schema.Types.ObjectId, required: true },
-    itemType: { type: String, enum: ["dsa", "sd", "ai"], required: true },
+    itemType: { type: String, enum: ["dsa", "sd", "ai", "react", "devops", "cloud"], required: true },
     status: {
       type: String,
       enum: ["Todo", "In Progress", "Done"],
@@ -230,6 +230,21 @@ const codeSubmissionSchema = new mongoose.Schema(
 );
 codeSubmissionSchema.index({ userId: 1, problemId: 1 });
 
+// ─── Topic Item (React / DevOps / Cloud) ─────────────────────
+const topicItemSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    category: { type: String, default: "" },
+    tracker: { type: String, enum: ["react", "devops", "cloud"], required: true },
+    status: { type: String, enum: ["Todo", "In Progress", "Done"], default: "Todo" },
+    notes: { type: mongoose.Schema.Types.Mixed, default: "" },
+    subtopics: [{ type: String }],
+    resources: [{ type: String }],
+    dayNumber: { type: Number, default: null },
+  },
+  { timestamps: true },
+);
+
 // ─── Skill ────────────────────────────────────────────────────
 const skillSchema = new mongoose.Schema(
   {
@@ -297,4 +312,5 @@ module.exports = {
   CodeSubmission: mongoose.model("CodeSubmission", codeSubmissionSchema),
   Skill: mongoose.model("Skill", skillSchema),
   SkillProgress: mongoose.model("SkillProgress", skillProgressSchema),
+  TopicItem: mongoose.model("TopicItem", topicItemSchema),
 };
