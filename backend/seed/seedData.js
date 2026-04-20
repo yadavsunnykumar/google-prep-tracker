@@ -1,7 +1,7 @@
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const mongoose = require('mongoose');
-const { DsaProblem, SystemDesign, AiTopic, DailyTask, MonthlyPlan, Progress } = require('../models');
+const { DsaProblem, SystemDesign, AiTopic, DailyTask, MonthlyPlan, Progress, TopicItem } = require('../models');
 
 const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/google-prep-tracker';
 
@@ -1484,9 +1484,11 @@ const AI_TOPICS = [
     ],
   },
 
-  // ── React ──────────────────────────────────────────────────────
+];
+
+const REACT_TOPICS = [
   {
-    name: 'React Rendering & Reconciliation', category: 'React', dayNumber: 53,
+    name: 'React Rendering & Reconciliation', category: 'Core', tracker: 'react', dayNumber: 1,
     subtopics: [
       'Virtual DOM: lightweight JS object tree diffed against previous snapshot to compute minimal DOM mutations',
       'Reconciliation algorithm: same component type → update; different type → unmount + remount subtree',
@@ -1499,7 +1501,7 @@ const AI_TOPICS = [
     ],
   },
   {
-    name: 'React Hooks In Depth', category: 'React', dayNumber: 54,
+    name: 'React Hooks In Depth', category: 'Core', tracker: 'react', dayNumber: 2,
     subtopics: [
       'Rules of hooks: call at top level (never in conditions/loops) — React stores hook state as ordered linked list on Fiber',
       'useState: lazy initializer fn (useState(() => expensiveCalc())) runs only on mount, not every render',
@@ -1514,7 +1516,7 @@ const AI_TOPICS = [
     ],
   },
   {
-    name: 'React Performance Optimization', category: 'React', dayNumber: 55,
+    name: 'React Performance Optimization', category: 'Performance', tracker: 'react', dayNumber: 3,
     subtopics: [
       'React.memo: shallow-compare props; skip re-render if props unchanged — useless if parent passes new object literals each render',
       'Scenario: memo-wrapped component still re-renders — diagnose: object/array/function prop created inline (new reference each time)',
@@ -1529,7 +1531,7 @@ const AI_TOPICS = [
     ],
   },
   {
-    name: 'React State Management', category: 'React', dayNumber: 56,
+    name: 'React State Management', category: 'State', tracker: 'react', dayNumber: 4,
     subtopics: [
       'Local state (useState/useReducer): default choice — keep state as close to where it is used as possible',
       'Context API: global state without prop drilling; NOT a performance tool — all consumers re-render on change',
@@ -1544,7 +1546,7 @@ const AI_TOPICS = [
     ],
   },
   {
-    name: 'React Server Components & Next.js', category: 'React', dayNumber: 57,
+    name: 'React Server Components & Next.js', category: 'Advanced', tracker: 'react', dayNumber: 5,
     subtopics: [
       'RSC (React Server Components): render on server, zero client JS — can async/await directly, access DB/FS',
       'Client Components: "use client" directive; required for hooks, event handlers, browser APIs',
@@ -1559,7 +1561,7 @@ const AI_TOPICS = [
     ],
   },
   {
-    name: 'React Concurrent Features', category: 'React', dayNumber: 58,
+    name: 'React Concurrent Features', category: 'Advanced', tracker: 'react', dayNumber: 6,
     subtopics: [
       'Concurrent Mode: React can pause, interrupt, and restart renders — multiple versions of UI in memory simultaneously',
       'useTransition: marks state update as non-urgent; React keeps current UI while preparing next state in background',
@@ -1574,7 +1576,7 @@ const AI_TOPICS = [
     ],
   },
   {
-    name: 'React Design Patterns', category: 'React', dayNumber: 59,
+    name: 'React Design Patterns', category: 'Patterns', tracker: 'react', dayNumber: 7,
     subtopics: [
       'Compound Components: parent manages shared state; children rendered via Context — Tabs, Select, Accordion patterns',
       'Render Props pattern: function-as-children or prop passes render control to consumer (mostly replaced by hooks)',
@@ -1589,7 +1591,7 @@ const AI_TOPICS = [
     ],
   },
   {
-    name: 'React Testing Strategies', category: 'React', dayNumber: 60,
+    name: 'React Testing Strategies', category: 'Testing', tracker: 'react', dayNumber: 8,
     subtopics: [
       'Testing pyramid for React: unit tests (hooks/utils) → component tests (RTL) → integration tests → E2E (Playwright/Cypress)',
       'React Testing Library philosophy: test behavior, not implementation — query by role, label, text not class/id',
@@ -1604,9 +1606,11 @@ const AI_TOPICS = [
     ],
   },
 
-  // ── DevOps ─────────────────────────────────────────────────────
+];
+
+const DEVOPS_TOPICS = [
   {
-    name: 'Docker & Containerization', category: 'DevOps', dayNumber: 61,
+    name: 'Docker & Containerization', category: 'Containers', tracker: 'devops', dayNumber: 1,
     subtopics: [
       'Container vs VM: containers share host OS kernel (namespaces + cgroups); VMs virtualize hardware — containers are lighter',
       'Dockerfile best practices: multi-stage builds to minimize final image size; COPY --chown, non-root user, .dockerignore',
@@ -1621,7 +1625,7 @@ const AI_TOPICS = [
     ],
   },
   {
-    name: 'Kubernetes Deep Dive', category: 'DevOps', dayNumber: 62,
+    name: 'Kubernetes Deep Dive', category: 'Orchestration', tracker: 'devops', dayNumber: 2,
     subtopics: [
       'Control plane components: API Server (REST gateway), etcd (state store), Scheduler (pod placement), Controller Manager',
       'Node components: kubelet (runs pods), kube-proxy (iptables/IPVS rules), container runtime (containerd)',
@@ -1636,7 +1640,7 @@ const AI_TOPICS = [
     ],
   },
   {
-    name: 'CI/CD Pipelines', category: 'DevOps', dayNumber: 63,
+    name: 'CI/CD Pipelines', category: 'CI/CD', tracker: 'devops', dayNumber: 3,
     subtopics: [
       'CI (Continuous Integration): automated build + test on every commit; fast feedback loop prevents integration hell',
       'CD (Continuous Delivery): every passing build is deployable to production; Continuous Deployment = auto-deploy',
@@ -1651,7 +1655,7 @@ const AI_TOPICS = [
     ],
   },
   {
-    name: 'Infrastructure as Code (Terraform)', category: 'DevOps', dayNumber: 64,
+    name: 'Infrastructure as Code (Terraform)', category: 'IaC', tracker: 'devops', dayNumber: 4,
     subtopics: [
       'Terraform workflow: terraform init → plan → apply → destroy; state file tracks real-world resource mappings',
       'Providers: plugins that translate HCL resources to API calls (aws, google, kubernetes, helm providers)',
@@ -1666,7 +1670,7 @@ const AI_TOPICS = [
     ],
   },
   {
-    name: 'Monitoring & Observability', category: 'DevOps', dayNumber: 65,
+    name: 'Monitoring & Observability', category: 'Observability', tracker: 'devops', dayNumber: 5,
     subtopics: [
       'Three pillars of observability: Metrics (what), Logs (why), Traces (where) — each answers a different question',
       'Prometheus: pull-based metrics scraping; PromQL for queries; Alertmanager for alerts with routing + silencing',
@@ -1681,7 +1685,7 @@ const AI_TOPICS = [
     ],
   },
   {
-    name: 'Site Reliability Engineering (SRE)', category: 'DevOps', dayNumber: 66,
+    name: 'Site Reliability Engineering (SRE)', category: 'SRE', tracker: 'devops', dayNumber: 6,
     subtopics: [
       'SRE vs DevOps: SRE is an implementation of DevOps principles; SREs are software engineers who apply SE to operations',
       'SLI (Service Level Indicator): measurable metric (request success rate, latency p99, availability %)',
@@ -1696,9 +1700,11 @@ const AI_TOPICS = [
     ],
   },
 
-  // ── Cloud ──────────────────────────────────────────────────────
+];
+
+const CLOUD_TOPICS = [
   {
-    name: 'GCP Core Services', category: 'Cloud', dayNumber: 67,
+    name: 'GCP Core Services', category: 'GCP', tracker: 'cloud', dayNumber: 1,
     subtopics: [
       'Compute Engine: VM instances with custom machine types; preemptible/Spot VMs for batch workloads (80% cheaper)',
       'GKE (Google Kubernetes Engine): managed Kubernetes; Autopilot mode auto-provisions node pools per workload',
@@ -1713,7 +1719,7 @@ const AI_TOPICS = [
     ],
   },
   {
-    name: 'AWS Core Services', category: 'Cloud', dayNumber: 68,
+    name: 'AWS Core Services', category: 'AWS', tracker: 'cloud', dayNumber: 2,
     subtopics: [
       'EC2: virtual machines with instance families (compute, memory, storage, GPU optimized); reserved vs on-demand vs spot',
       'S3: object storage with 11-nines durability; versioning, lifecycle policies, cross-region replication, S3 Select for queries',
@@ -1728,7 +1734,7 @@ const AI_TOPICS = [
     ],
   },
   {
-    name: 'Cloud Networking & Security', category: 'Cloud', dayNumber: 69,
+    name: 'Cloud Networking & Security', category: 'Networking', tracker: 'cloud', dayNumber: 3,
     subtopics: [
       'VPC design: public subnets (load balancers), private subnets (app tier), isolated subnets (databases) per AZ',
       'NAT Gateway: allows private subnet instances to initiate outbound internet traffic; stateful; per-AZ for HA',
@@ -1743,7 +1749,7 @@ const AI_TOPICS = [
     ],
   },
   {
-    name: 'Serverless Architecture', category: 'Cloud', dayNumber: 70,
+    name: 'Serverless Architecture', category: 'Serverless', tracker: 'cloud', dayNumber: 4,
     subtopics: [
       'Serverless model: no server management, auto-scales from 0 to infinity, pay-per-invocation pricing model',
       'Cold start problem: function initialization latency on first invocation; mitigations: provisioned concurrency, SnapStart, warm-up pings',
@@ -1758,7 +1764,7 @@ const AI_TOPICS = [
     ],
   },
   {
-    name: 'Cloud-Native & Microservices on Cloud', category: 'Cloud', dayNumber: 71,
+    name: 'Cloud-Native & Microservices on Cloud', category: 'Architecture', tracker: 'cloud', dayNumber: 5,
     subtopics: [
       'Cloud-native principles: containerized, dynamically orchestrated, microservices-oriented, DevOps/CI-CD, observable',
       'Service mesh on cloud: Istio on GKE/EKS vs cloud-native alternatives (AWS App Mesh, GCP Traffic Director)',
@@ -1957,6 +1963,7 @@ async function seed() {
       DsaProblem.deleteMany({}),
       SystemDesign.deleteMany({}),
       AiTopic.deleteMany({}),
+      TopicItem.deleteMany({}),
       DailyTask.deleteMany({}),
       MonthlyPlan.deleteMany({}),
       Progress.deleteMany({}),
@@ -1968,8 +1975,9 @@ async function seed() {
     const sdTopics      = await SystemDesign.insertMany(SYSTEM_DESIGN);
     const aiTopics      = await AiTopic.insertMany(AI_TOPICS);
     const monthlyPlans  = await MonthlyPlan.insertMany(MONTHLY_PLANS);
+    await TopicItem.insertMany([...REACT_TOPICS, ...DEVOPS_TOPICS, ...CLOUD_TOPICS]);
     await Progress.create({ userId: 'default' });
-    console.log(`✅ Inserted: ${dsaProblems.length} DSA | ${sdTopics.length} SD | ${aiTopics.length} AI | ${monthlyPlans.length} Monthly Plans`);
+    console.log(`✅ Inserted: ${dsaProblems.length} DSA | ${sdTopics.length} SD | ${aiTopics.length} AI | ${REACT_TOPICS.length + DEVOPS_TOPICS.length + CLOUD_TOPICS.length} Topics (React/DevOps/Cloud) | ${monthlyPlans.length} Monthly Plans`);
 
     // Auto-generate daily tasks covering all SD and AI topics
     const maxDay = Math.max(

@@ -73,6 +73,7 @@ app.use("/api/dashboard", require("./routes/dashboard"));
 app.use("/api/notes", require("./routes/notes"));
 app.use("/api/code", require("./routes/code"));
 app.use("/api/skills", require("./routes/skills"));
+app.use("/api/topics", require("./routes/topics"));
 
 app.get("/api/health", (_req, res) =>
   res.json({ status: "ok", timestamp: new Date() }),

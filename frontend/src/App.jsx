@@ -17,6 +17,9 @@ const DailyTasks = lazy(() => import("./pages/DailyTasks"));
 const DSATracker = lazy(() => import("./pages/DSATracker"));
 const SystemDesign = lazy(() => import("./pages/SystemDesign"));
 const AITracker = lazy(() => import("./pages/AITracker"));
+const ReactTracker = lazy(() => import("./pages/ReactTracker"));
+const DevOpsTracker = lazy(() => import("./pages/DevOpsTracker"));
+const CloudTracker = lazy(() => import("./pages/CloudTracker"));
 const Notes = lazy(() => import("./pages/Notes"));
 const SkillsDashboard = lazy(() => import("./pages/SkillsDashboard"));
 
@@ -65,6 +68,9 @@ function AppRoutes() {
           <Route path="dsa" element={<DSATracker />} />
           <Route path="system-design" element={<SystemDesign />} />
           <Route path="ai-ml" element={<AITracker />} />
+          <Route path="react" element={<ReactTracker />} />
+          <Route path="devops" element={<DevOpsTracker />} />
+          <Route path="cloud" element={<CloudTracker />} />
           <Route path="notes" element={<Notes />} />
           <Route path="skills" element={<SkillsDashboard />} />
         </Route>
