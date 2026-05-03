@@ -1,6 +1,30 @@
 const router = require("express").Router();
-const { DailyTask, Progress } = require("../models");
+const { DailyTask, Progress, UserStatus } = require("../models");
 const { requireAuth, optionalAuth } = require("../middleware/auth");
+
+async function attachTopicStatuses(task, userId) {
+  const t = task.toObject ? task.toObject() : { ...task };
+  if (!userId) return t;
+
+  const entries = [
+    t.dsaProblem1 && { obj: t.dsaProblem1, type: "dsa" },
+    t.dsaProblem2 && { obj: t.dsaProblem2, type: "dsa" },
+    t.systemDesignTopic && { obj: t.systemDesignTopic, type: "sd" },
+    t.aiTopic && { obj: t.aiTopic, type: "ai" },
+  ].filter(Boolean);
+
+  if (!entries.length) return t;
+
+  const ids = entries.map((e) => e.obj._id);
+  const statuses = await UserStatus.find({ userId, itemId: { $in: ids } });
+  const map = Object.fromEntries(statuses.map((s) => [s.itemId.toString(), s.status]));
+
+  entries.forEach(({ obj }) => {
+    obj.userStatus = map[obj._id.toString()] || "Todo";
+  });
+
+  return t;
+}
 
 // GET all tasks
 router.get("/", optionalAuth, async (req, res, next) => {
@@ -10,7 +34,30 @@ router.get("/", optionalAuth, async (req, res, next) => {
       .populate("systemDesignTopic")
       .populate("aiTopic")
       .sort({ dayNumber: 1 });
-    res.json(tasks);
+
+    if (!req.userId) return res.json(tasks);
+
+    // Fetch all UserStatuses for this user in one query and attach to topics
+    const allIds = tasks.flatMap((t) =>
+      [t.dsaProblem1, t.dsaProblem2, t.systemDesignTopic, t.aiTopic]
+        .filter(Boolean)
+        .map((x) => x._id),
+    );
+    const statuses = await UserStatus.find({
+      userId: req.userId,
+      itemId: { $in: allIds },
+    });
+    const map = Object.fromEntries(statuses.map((s) => [s.itemId.toString(), s.status]));
+
+    res.json(
+      tasks.map((task) => {
+        const t = task.toObject();
+        ["dsaProblem1", "dsaProblem2", "systemDesignTopic", "aiTopic"].forEach((key) => {
+          if (t[key]) t[key].userStatus = map[t[key]._id.toString()] || "Todo";
+        });
+        return t;
+      }),
+    );
   } catch (err) {
     next(err);
   }
@@ -27,7 +74,7 @@ router.get("/:day", optionalAuth, async (req, res, next) => {
       .populate("systemDesignTopic")
       .populate("aiTopic");
     if (!task) return res.status(404).json({ error: "Day not found" });
-    res.json(task);
+    res.json(await attachTopicStatuses(task, req.userId));
   } catch (err) {
     next(err);
   }
@@ -54,8 +101,8 @@ router.patch("/:day", requireAuth, async (req, res, next) => {
       task.isCompleted = Boolean(isCompleted);
       task.completedAt = isCompleted ? new Date() : null;
 
-      // Update streak atomically using findOneAndUpdate
       if (isCompleted && !wasCompleted) {
+        // Update streak
         const progress = await Progress.findOneAndUpdate(
           { userId: req.userId },
           {},
@@ -68,11 +115,8 @@ router.patch("/:day", requireAuth, async (req, res, next) => {
         const yesterday = new Date(Date.now() - 86400000).toDateString();
 
         const streakInc =
-          lastDate === yesterday
-            ? 1
-            : lastDate === today
-              ? 0
-              : -(progress.streak - 1);
+          lastDate === yesterday ? 1 : lastDate === today ? 0 : -(progress.streak - 1);
+
         const streakBroken = lastDate !== yesterday && lastDate !== today;
         await Progress.updateOne(
           { userId: req.userId },
@@ -88,12 +132,32 @@ router.patch("/:day", requireAuth, async (req, res, next) => {
             },
           },
         );
+
+        // Cascade: mark all linked topics as Done in UserStatus
+        const cascadeOps = [
+          task.dsaProblem1 && { itemId: task.dsaProblem1, itemType: "dsa" },
+          task.dsaProblem2 && { itemId: task.dsaProblem2, itemType: "dsa" },
+          task.systemDesignTopic && { itemId: task.systemDesignTopic, itemType: "sd" },
+          task.aiTopic && { itemId: task.aiTopic, itemType: "ai" },
+        ].filter(Boolean);
+
+        await Promise.all(
+          cascadeOps.map(({ itemId, itemType }) =>
+            UserStatus.findOneAndUpdate(
+              { userId: req.userId, itemId, itemType },
+              { status: "Done" },
+              { upsert: true, new: true },
+            ),
+          ),
+        );
       }
     }
+
     await task.save();
-    res.json(
-      await task.populate("dsaProblem1 dsaProblem2 systemDesignTopic aiTopic"),
+    const populated = await task.populate(
+      "dsaProblem1 dsaProblem2 systemDesignTopic aiTopic",
     );
+    res.json(await attachTopicStatuses(populated, req.userId));
   } catch (err) {
     next(err);
   }
