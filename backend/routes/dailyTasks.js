@@ -73,17 +73,18 @@ router.patch("/:day", requireAuth, async (req, res, next) => {
             : lastDate === today
               ? 0
               : -(progress.streak - 1);
+        const streakBroken = lastDate !== yesterday && lastDate !== today;
         await Progress.updateOne(
           { userId: req.userId },
           {
-            $inc: { totalDaysStudied: 1, streak: streakInc },
+            $inc: {
+              totalDaysStudied: 1,
+              ...(streakBroken ? {} : { streak: streakInc }),
+            },
             $set: {
               lastStudiedDate: new Date(),
               currentDay: Math.max(progress.currentDay, day + 1),
-              // Reset streak to 1 if streak was broken (streakInc is negative)
-              ...(lastDate !== yesterday && lastDate !== today
-                ? { streak: 1 }
-                : {}),
+              ...(streakBroken ? { streak: 1 } : {}),
             },
           },
         );
