@@ -145,9 +145,9 @@ export default function Dashboard() {
                 <div className="space-y-1.5">
                   {[todayTask.dsaProblem1, todayTask.dsaProblem2]
                     .filter(Boolean)
-                    .map((p, i) => (
+                    .map((p) => (
                       <div
-                        key={i}
+                        key={p._id}
                         className="flex items-center justify-between"
                       >
                         <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
@@ -363,6 +363,7 @@ export default function Dashboard() {
           },
         ].map(({ label, icon: Icon, to, color }) => (
           <button
+            key={label}
             onClick={() => navigate(to)}
             className={`card p-4 flex items-center gap-3 text-left hover:shadow-md transition-all border ${color} group`}
           >

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { dailyTasksApi } from "../utils/api";
+import { dailyTasksApi, dsaApi, systemDesignApi, aiApi } from "../utils/api";
 import { Badge, Spinner, SectionHeader } from "../components/ui";
 import {
   Code2,
@@ -57,6 +57,30 @@ export default function DailyTasks() {
     } finally {
       setSaving(false);
     }
+  }
+
+  async function toggleTopicStatus(type, id, current) {
+    const next = current === "Done" ? "Todo" : "Done";
+    const apiCall =
+      type === "dsa"
+        ? dsaApi.updateStatus(id, next)
+        : type === "sd"
+          ? systemDesignApi.updateStatus(id, next)
+          : aiApi.updateStatus(id, next);
+    await apiCall;
+    setTask((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev };
+      if (type === "dsa") {
+        if (prev.dsaProblem1?._id === id) updated.dsaProblem1 = { ...prev.dsaProblem1, userStatus: next };
+        if (prev.dsaProblem2?._id === id) updated.dsaProblem2 = { ...prev.dsaProblem2, userStatus: next };
+      } else if (type === "sd") {
+        updated.systemDesignTopic = { ...prev.systemDesignTopic, userStatus: next };
+      } else {
+        updated.aiTopic = { ...prev.aiTopic, userStatus: next };
+      }
+      return updated;
+    });
   }
 
   async function handleSave() {
@@ -197,13 +221,20 @@ export default function DailyTasks() {
               <div className="space-y-3">
                 {[task.dsaProblem1, task.dsaProblem2]
                   .filter(Boolean)
-                  .map((p, i) => (
+                  .map((p) => (
                     <div
-                      key={i}
-                      className="flex items-center justify-between p-3 bg-brand-50 dark:bg-brand-900/20 rounded-xl"
+                      key={p._id}
+                      className={`flex items-center justify-between p-3 rounded-xl ${
+                        p.userStatus === "Done"
+                          ? "bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800"
+                          : "bg-brand-50 dark:bg-brand-900/20"
+                      }`}
                     >
                       <div>
-                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
+                          {p.userStatus === "Done" && (
+                            <CheckCircle2 size={13} className="text-emerald-500 flex-shrink-0" />
+                          )}
                           {p.name}
                         </p>
                         <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
@@ -223,6 +254,16 @@ export default function DailyTasks() {
                             <ExternalLink size={14} />
                           </a>
                         )}
+                        <button
+                          onClick={() => toggleTopicStatus("dsa", p._id, p.userStatus)}
+                          className={`text-xs px-2 py-0.5 rounded-full font-medium transition-colors ${
+                            p.userStatus === "Done"
+                              ? "bg-emerald-100 text-emerald-700 hover:bg-red-100 hover:text-red-600"
+                              : "bg-gray-100 text-gray-500 hover:bg-emerald-100 hover:text-emerald-700"
+                          }`}
+                        >
+                          {p.userStatus === "Done" ? "Undo" : "Done"}
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -231,14 +272,34 @@ export default function DailyTasks() {
 
             {/* System Design */}
             {task.systemDesignTopic && (
-              <div className="card p-4 border border-emerald-100 dark:border-emerald-900/50">
+              <div className={`card p-4 border ${
+                task.systemDesignTopic.userStatus === "Done"
+                  ? "border-emerald-300 dark:border-emerald-700"
+                  : "border-emerald-100 dark:border-emerald-900/50"
+              }`}>
                 <div className="flex items-center gap-2 mb-3">
                   <Server size={16} className="text-emerald-600" />
                   <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
                     System Design
                   </h3>
+                  <button
+                    onClick={() => toggleTopicStatus("sd", task.systemDesignTopic._id, task.systemDesignTopic.userStatus)}
+                    className={`ml-auto text-xs px-2 py-0.5 rounded-full font-medium transition-colors flex items-center gap-1 ${
+                      task.systemDesignTopic.userStatus === "Done"
+                        ? "bg-emerald-100 text-emerald-700 hover:bg-red-100 hover:text-red-600"
+                        : "bg-gray-100 text-gray-500 hover:bg-emerald-100 hover:text-emerald-700"
+                    }`}
+                  >
+                    {task.systemDesignTopic.userStatus === "Done" ? (
+                      <><CheckCircle2 size={11} /> Undo</>
+                    ) : "Done"}
+                  </button>
                 </div>
-                <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl">
+                <div className={`p-3 rounded-xl ${
+                  task.systemDesignTopic.userStatus === "Done"
+                    ? "bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800"
+                    : "bg-emerald-50 dark:bg-emerald-900/20"
+                }`}>
                   <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
                     {task.systemDesignTopic.name}
                   </p>
@@ -264,12 +325,28 @@ export default function DailyTasks() {
             {/* AI + CS + Backend */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {task.aiTopic && (
-                <div className="card p-4 border border-violet-100 dark:border-violet-900/50">
+                <div className={`card p-4 border ${
+                  task.aiTopic.userStatus === "Done"
+                    ? "border-emerald-300 dark:border-emerald-700"
+                    : "border-violet-100 dark:border-violet-900/50"
+                }`}>
                   <div className="flex items-center gap-2 mb-2">
                     <Brain size={14} className="text-violet-600" />
                     <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
                       AI / ML
                     </span>
+                    <button
+                      onClick={() => toggleTopicStatus("ai", task.aiTopic._id, task.aiTopic.userStatus)}
+                      className={`ml-auto text-xs px-2 py-0.5 rounded-full font-medium transition-colors flex items-center gap-1 ${
+                        task.aiTopic.userStatus === "Done"
+                          ? "bg-emerald-100 text-emerald-700 hover:bg-red-100 hover:text-red-600"
+                          : "bg-gray-100 text-gray-500 hover:bg-emerald-100 hover:text-emerald-700"
+                      }`}
+                    >
+                      {task.aiTopic.userStatus === "Done" ? (
+                        <><CheckCircle2 size={13} /> Undo</>
+                      ) : "Done"}
+                    </button>
                   </div>
                   <p className="text-sm text-gray-700 dark:text-gray-300 font-medium">
                     {task.aiTopic.name}
